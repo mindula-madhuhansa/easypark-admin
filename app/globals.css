@@ -19,6 +19,6 @@
     }
 
     .settingBtn {
-        @apply hover:bg-[#007946] w-full text-left py-3 px-4 rounded-xl
+        @apply hover:bg-[#007946] transition duration-100 ease-in w-full text-left py-3 px-4 rounded-xl
     }
 }

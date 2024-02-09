@@ -7,7 +7,7 @@ import { getParkingSpaceId } from "@/utils/getParkingSpaceId";
 import { doc, setDoc } from "firebase/firestore";
 import { db, storage } from "@/config/firebase";
 import toast from "react-hot-toast";
-import { ref, uploadBytes } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SidePanel from "@/components/SidePanel";
 
 export default function Home() {
@@ -45,7 +45,12 @@ export default function Home() {
     const toastId = toast.loading("Saving...");
     const parkingSpaceId = getParkingSpaceId(parkingName, latitude, longitude);
 
+    const docRef = ref(storage, `parkingImages/${parkingSpaceId}`);
+
     try {
+      await uploadBytes(docRef, parkingImage);
+      const imageURL = await getDownloadURL(docRef);
+
       await setDoc(doc(db, "parking-spaces", parkingSpaceId), {
         parkingName: parkingName,
         address: address,
@@ -54,15 +59,8 @@ export default function Home() {
         parkingType: parkingType,
         latitude: latitude,
         longitude: longitude,
+        imageUrl: imageURL,
       });
-
-      const docRef = ref(storage, `parkingImages/${parkingSpaceId}`);
-
-      try {
-        await uploadBytes(docRef, parkingImage);
-      } catch (e) {
-        console.log(e);
-      }
 
       toast.success("Parking details saved successfully!", {
         id: toastId,
@@ -78,7 +76,7 @@ export default function Home() {
       setLongitude("");
       setParkingImage("");
     } catch (error) {
-      console.error("Error handling scanned data: ", error);
+      console.error("Couldn't save the Parking details: ", error);
       toast.error("Couldn't save the Parking details", {
         id: toastId,
         position: "top-center",
