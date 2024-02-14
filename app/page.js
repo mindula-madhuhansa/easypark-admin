@@ -9,8 +9,22 @@ import { db, storage } from "@/config/firebase";
 import toast from "react-hot-toast";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SidePanel from "@/components/SidePanel";
+import QRCode from "react-qr-code";
+import { useState } from "react";
 
 export default function Home() {
+  const [url, setUrl] = useState("");
+
+  const GenerateQRCode = () => {
+    QRCode.toDataURL(url, {
+      margin: 2,
+      width: 800,
+      color: {
+        dark: "#335383FF",
+        light: "#EEEEEEFF",
+      },
+    });
+  };
   const {
     parkingName,
     address,
@@ -40,6 +54,7 @@ export default function Home() {
         console.error("Error getting user's location:", error);
       });
   };
+  const parkingId = getParkingSpaceId(parkingName, latitude, longitude);
 
   const handleSave = async () => {
     const toastId = toast.loading("Saving...");
@@ -82,6 +97,8 @@ export default function Home() {
         position: "top-center",
       });
     }
+
+    // download qr
   };
 
   const handleDiscard = () => {
@@ -203,6 +220,21 @@ export default function Home() {
                 onChange={(e) => setParkingImage(e.target.files[0])}
               />
             </div>
+
+            <button onClick={GenerateQRCode}>Generate</button>
+            {parkingName && (
+              <>
+                <img scr={parkingId} />
+                <button
+                  variant="contained"
+                  color="success"
+                  herf={parkingId}
+                  download="qrcode.png"
+                >
+                  Download
+                </button>
+              </>
+            )}
 
             {/* Save Discard Buttons */}
             <div className="flex flex-col mt-40">
