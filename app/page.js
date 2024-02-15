@@ -6,11 +6,13 @@ import { getLocation } from "@/utils/getLocation";
 import { getParkingSpaceId } from "@/utils/getParkingSpaceId";
 import { doc, setDoc } from "firebase/firestore";
 import { db, storage } from "@/config/firebase";
-import toast from "react-hot-toast";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SidePanel from "@/components/SidePanel";
-
+import QRCode from "qrcode";
+import { useState } from "react";
 export default function Home() {
+  const [imageUrlIn, setImageUrlIn] = useState("");
+  const [imageUrlOut, setImageUrlOut] = useState("");
   const {
     parkingName,
     address,
@@ -42,29 +44,42 @@ export default function Home() {
   };
 
   const handleSave = async () => {
-    const toastId = toast.loading("Saving...");
     const parkingSpaceId = getParkingSpaceId(parkingName, latitude, longitude);
 
     const docRef = ref(storage, `parkingImages/${parkingSpaceId}`);
+
+    const inData = parkingSpaceId + "~true";
+    const outData = parkingSpaceId + "~false";
+
+    const responseImageUrlIn = await QRCode.toDataURL(inData, {
+      type: "image/png",
+      margin: 1,
+      width: 400,
+    });
+    setImageUrlIn(responseImageUrlIn);
+
+    const responseImageUrlOut = await QRCode.toDataURL(outData, {
+      type: "image/png",
+      margin: 1,
+      width: 400,
+    });
+    setImageUrlOut(responseImageUrlOut);
 
     try {
       await uploadBytes(docRef, parkingImage);
       const imageURL = await getDownloadURL(docRef);
 
       await setDoc(doc(db, "parking-spaces", parkingSpaceId), {
+        parkingSpaceId: parkingSpaceId,
         parkingName: parkingName,
         address: address,
         slots: availableSlots,
         parkingRate: parkingRate,
-        parkingType: parkingType,
+        parkingType: parkingType || "Public",
         latitude: latitude,
         longitude: longitude,
-        imageUrl: imageURL,
-      });
-
-      toast.success("Parking details saved successfully!", {
-        id: toastId,
-        position: "top-center",
+        imageUrl: imageURL || "",
+        freeSlots: availableSlots,
       });
 
       setParkingName("");
@@ -77,10 +92,6 @@ export default function Home() {
       setParkingImage("");
     } catch (error) {
       console.error("Couldn't save the Parking details: ", error);
-      toast.error("Couldn't save the Parking details", {
-        id: toastId,
-        position: "top-center",
-      });
     }
   };
 
@@ -105,7 +116,9 @@ export default function Home() {
             <div className="flex flex-col">
               <div className="grid grid-cols-2">
                 <div className="containerDiv">
-                  <label>Latitude*</label>
+                  <label>
+                    Latitude<span className="text-red-600">*</span>
+                  </label>
                   <input
                     required
                     placeholder="Latitude of the parking space"
@@ -114,7 +127,9 @@ export default function Home() {
                   />
                 </div>
                 <div className="containerDiv">
-                  <label>Longitude*</label>
+                  <label>
+                    Longitude<span className="text-red-600">*</span>
+                  </label>
                   <input
                     required
                     placeholder="Longitude of the parking space"
@@ -140,7 +155,9 @@ export default function Home() {
           {/* Right Form */}
           <div className="border-2 border-black rounded-xl flex flex-col">
             <div className="containerDiv">
-              <label>Parking name*</label>
+              <label>
+                Parking name<span className="text-red-600">*</span>
+              </label>
               <input
                 required
                 placeholder="Display name of the parking space"
@@ -150,7 +167,9 @@ export default function Home() {
             </div>
 
             <div className="containerDiv">
-              <label>Address*</label>
+              <label>
+                Address<span className="text-red-600">*</span>
+              </label>
               <input
                 required
                 placeholder="Enter the parking space address"
@@ -172,7 +191,9 @@ export default function Home() {
               </div>
 
               <div className="containerDiv">
-                <label>Parking rate*</label>
+                <label>
+                  Parking rate<span className="text-red-600">*</span>
+                </label>
                 <input
                   placeholder="Enter parking rate/hr"
                   type="number"
@@ -197,11 +218,39 @@ export default function Home() {
             </div>
 
             <div className="containerDiv">
-              <label>Parking space image*</label>
+              <label>
+                Parking space image<span className="text-red-600">*</span>
+              </label>
               <input
                 type="file"
                 onChange={(e) => setParkingImage(e.target.files[0])}
               />
+
+              {imageUrlIn && imageUrlOut ? (
+                <div className="mt-12 flex flex-col items-center justify-center">
+                  <h1 className="text-xl font-semibold">
+                    Click to Download QR
+                  </h1>
+                  <div className="flex">
+                    <div>
+                      <h1 className="font-bold text-2xl">IN</h1>
+                      <a href={imageUrlIn} download>
+                        <img className="h-40 w-40" src={imageUrlIn} alt="img" />
+                      </a>
+                    </div>
+                    <div>
+                      <h1 className="font-bold text-2xl">OUT</h1>
+                      <a href={imageUrlOut} download>
+                        <img
+                          className="h-40 w-40"
+                          src={imageUrlOut}
+                          alt="img"
+                        />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* Save Discard Buttons */}

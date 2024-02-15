@@ -13,7 +13,6 @@ import {
 
 import { db } from "@/config/firebase";
 import { getCurrentTimeFormatted } from "@/utils/getTime";
-import toast from "react-hot-toast";
 
 function QRScannerPage() {
   const [scannedData, setScannedData] = useState("No result");
@@ -44,7 +43,6 @@ function QRScannerPage() {
 
   // Function to handle scanned data
   async function handleScannedData() {
-    const toastId = toast.loading("Scanning...");
     try {
       // Querying the user collection for matching userId
       const userCollectionRef = collection(db, "users");
@@ -65,19 +63,11 @@ function QRScannerPage() {
           userId: scannedData,
           checkinTime: currentTime,
         });
-        toast.success("QR scanned successfully!", {
-          id: toastId,
-          position: "top-center",
-        });
 
         // Setting scan completion state
         setScanCompleted(true);
       }
     } catch (error) {
-      toast.success("Wrong QR code", {
-        id: toastId,
-        position: "top-center",
-      });
       console.error("Error handling scanned data: ", error);
     }
   }

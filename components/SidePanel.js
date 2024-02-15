@@ -18,12 +18,12 @@ function SidePanel() {
         <button className="settingBtn" onClick={() => router.push("/showall")}>
           Show all parkings
         </button>
-        <button
+        {/* <button
           className="settingBtn"
           onClick={() => router.push("/qrscanner")}
         >
           Scan QR code
-        </button>
+        </button> */}
       </div>
     </div>
   );
